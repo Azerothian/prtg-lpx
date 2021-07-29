@@ -18,7 +18,7 @@ const sysExCommand = {
   "Mode": 0,
   "Lighting": 3,
   "DAWMode": 16,
-}
+};
 
 class LaunchpadX {
   constructor() {
@@ -104,7 +104,8 @@ class LaunchpadX {
 
 
 async function getPRTGSensors() {
-  const response = await fetch(`${config.prtg.host}api/table.json?content=sensors&filter_status=4&username=${config.prtg.username}&password=${config.prtg.password}`);
+  const filterStatus = "filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"; // from sensors with alarms
+  const response = await fetch(`${config.prtg.host}api/table.json?content=sensors&${filterStatus}&username=${config.prtg.username}&password=${config.prtg.password}`);
   return response.json();
 }
 
