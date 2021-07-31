@@ -26,6 +26,14 @@ class LaunchpadX {
     // this.current = {};
     // this.intervals = {};
   }
+  printPorts = () => {
+    const count = this.output.getPortCount();
+    console.log("print ports start")
+    for(let i = 0; i < count; i++) {
+      console.log(`${i} - ${this.output.getPortName(i)}`);
+    }
+    console.log("print ports end")
+  }
   initialise = (port) => {
     this.output.openPort(port);
   }
@@ -115,6 +123,7 @@ async function getPRTGSensors() {
 (async() => {
 
   const lp = new LaunchpadX();
+  lp.printPorts();
   lp.initialise(config.midiDevice);
   lp.reset();
   lp.setMode("programmer");
@@ -134,11 +143,17 @@ async function getPRTGSensors() {
           const sensor = sensors[i];
           switch (sensor.status) {
             case "Warning":
-              lp.setButtonColour(x, y, 13);//13);
+              lp.setButtonColour(x, y, 13);
+              break;
+            case "Down":
+              lp.setPulsingColour(x, y, 72);
+              break;
+            case "Down (Acknowledged)":
+              lp.setButtonColour(x, y, 72);
               break;
             default:
               console.log("unknown sensor", sensor);
-              lp.setPulsingColour(x, y, 72);
+              lp.setPulsingColour(x, y, 13);
               break;
           }
         } else {
