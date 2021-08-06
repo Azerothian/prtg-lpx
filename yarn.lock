@@ -3928,6 +3928,13 @@ istanbul-reports@^3.0.2:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
 
+jenkins@^0.28.1:
+  version "0.28.1"
+  resolved "https://registry.yarnpkg.com/jenkins/-/jenkins-0.28.1.tgz#f7951798ee5d2bb501a831979b6b5ecc1a922a64"
+  integrity sha512-gcC4QUrP4VzdqOMHoVzh36XlJprxJkI2HGLQSY7w84KoCTVNDcR/8O00tYyXp9vrZOx4wl5zCXLVKMgH2IoyJQ==
+  dependencies:
+    papi "^0.29.0"
+
 jest-changed-files@^27.0.6:
   version "27.0.6"
   resolved "https://registry.npmjs.org/jest-changed-files/-/jest-changed-files-27.0.6.tgz#bed6183fcdea8a285482e3b50a9a7712d49a7a8b"
@@ -5097,6 +5104,11 @@ p-try@^2.0.0:
   version "2.2.0"
   resolved "https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz#cb2868540e313d61de58fafbe35ce9004d5540e6"
   integrity sha512-R4nPAVTAU0B9D35/Gk3uJf/7XYbQcyohSKdvAxIRSNghFl4e71hVoGnBNQz9cWaXxO2I10KTC+3jMdvvoKw6dQ==
+
+papi@^0.29.0:
+  version "0.29.1"
+  resolved "https://registry.yarnpkg.com/papi/-/papi-0.29.1.tgz#7373e2c527f5117d61fd2a0e6c6b1dd72bf7f180"
+  integrity sha512-Y9ipSMfWuuVFO3zY9PlxOmEg+bQ7CeJ28sa9/a0veYNynLf9fwjR3+3fld5otEy7okUaEOUuCHVH62MyTmACXQ==
 
 parent-module@^1.0.0:
   version "1.0.1"

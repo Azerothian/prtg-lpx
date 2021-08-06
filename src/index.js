@@ -1,123 +1,11 @@
-import midi from "midi";
+
 import schedule from "node-schedule";
-import fetch from "node-fetch";
-
 import config from "./config";
-import {customMode3, customMode4} from "./data/buttons";
-import {_} from "core-js";
 
-
-const sysExHeader = [240, 0, 32, 41, 2, 12];
-const LightingType = {
-  "Static": 0,
-  "Flashing": 1,
-  "Pulsing": 2,
-  "RGB": 3,
-};
-const sysExCommand = {
-  "Mode": 0,
-  "Lighting": 3,
-  "DAWMode": 16,
-};
-
-class LaunchpadX {
-  constructor() {
-    this.output = new midi.Output();
-    // this.current = {};
-    // this.intervals = {};
-  }
-  printPorts = () => {
-    const count = this.output.getPortCount();
-    console.log("print ports start")
-    for(let i = 0; i < count; i++) {
-      console.log(`${i} - ${this.output.getPortName(i)}`);
-    }
-    console.log("print ports end")
-  }
-  initialise = (port) => {
-    this.output.openPort(port);
-  }
-  setDAWMode = (enabled = false) => {
-    this.sendSysEx([sysExCommand.DAWMode, enabled ? 1 : 0]);
-  }
-  setMode = (mode) => {
-    let key;
-    switch (mode) {
-      case "session": // (only selectable in DAW mode)
-        key = 0;
-        break;
-      case "note":
-        key = 1;
-        break;
-      case "mode1":
-        key = 4;
-        break;
-      case "mode2":
-        key = 5;
-        break;
-      case "mode3":
-        key = 6;
-        break;
-      case "mode4":
-        key = 7;
-        break;
-      case "faders": // (only selectable in DAW mode)
-        key = 13;
-        break;
-      case "programmer": // (only selectable in DAW mode)
-        key = 127;
-        break;
-    }
-    this.sendSysEx([sysExCommand.Mode, key]);
-  }
-  setButtonColour = (row, col, colourId) => {
-    const buttonCode = customMode4[row][col];
-
-    this.output.sendMessage([144, buttonCode, colourId]);
-    // if (!this.current[row]) {
-    //   this.current[row] = {};
-    // }
-    // this.current[row][col] = buttonCode;
-  }
-  setRGBColour = (row, col, r, g, b) => {
-    const buttonCode = customMode4[row][col];
-    this.sendSysEx([sysExCommand.Lighting, LightingType.RGB, buttonCode, r, g, b]);
-  }
-  setFlashingColour = (row, col, aColourId, bColourId) => {
-    const buttonCode = customMode4[row][col];
-    this.sendSysEx([sysExCommand.Lighting, LightingType.Flashing, buttonCode, aColourId, bColourId]);
-  }
-  setPulsingColour = (row, col, colourId) => {
-    const buttonCode = customMode4[row][col];
-    this.sendSysEx([sysExCommand.Lighting, LightingType.Pulsing, buttonCode, colourId]);
-  }
-
-  // setColour = () => {
-  //   this.output.sendMessage([240, 0, 32, 41, 2, 12, 3, 0, 11, 13]);
-  // }
-  sendSysEx = (arr = []) => {
-    const msg = [...sysExHeader, ...arr, 247];
-    console.log("sendSysEx", msg);
-    return this.output.sendMessage(msg);
-  }
-  reset = async() => {
-    for (let x = 0; x <= 8; x++) {
-      for (let y = 0; y <= 8; y++) {
-        this.setButtonColour(x, y, 0);
-      }
-    }
-  }
-
-}
-
-
-async function getPRTGSensors() {
-  const filterStatus = "filter_status=5&filter_status=4&filter_status=10&filter_status=13&filter_status=14"; // from sensors with alarms
-  const response = await fetch(`${config.prtg.host}api/table.json?content=sensors&${filterStatus}&username=${config.prtg.username}&password=${config.prtg.password}`);
-  return response.json();
-}
-
-
+import LaunchpadX from "./logic/launchpadx";
+import LightShow from "./logic/lightshow";
+import getPRTGSensors from "./logic/get-prtg-sensors";
+import getJenkinsJobs from "./logic/get-jenkins-jobs";
 
 
 (async() => {
@@ -127,6 +15,7 @@ async function getPRTGSensors() {
   lp.initialise(config.midiDevice);
   lp.reset();
   lp.setMode("programmer");
+  const lshow = new LightShow(lp);
   // lp.setRGBColour(0, 0, 0, 60, 80);
   // lp.setFlashingColour(1, 1, 13, 72);
   // lp.setPulsingColour(2, 2, 13, 72);
@@ -136,8 +25,18 @@ async function getPRTGSensors() {
   async function queryAndSetDisplay() {
     lp.setPulsingColour(8, 8, 122);
     const {sensors} = await getPRTGSensors();
+    const errors = sensors.filter((s) => s.status === "Down");
+    if (errors.length > 0) {
+      if (!lshow.isActive()) {
+        lshow.start();
+      }
+      return;
+    }
+    if (lshow.isActive()) {
+      lshow.stop();
+    }
     let i = 0;
-    for (let y = 0; y <= 8; y++) {
+    for (let y = 0; y <= 3; y++) {
       for (let x = 0; x <= 8; x++) {
         if (i < sensors.length) {
           const sensor = sensors[i];
@@ -162,80 +61,46 @@ async function getPRTGSensors() {
         i++;
       }
     }
+
+    i = 0;
+    // get jenkins production jobs
+    const jobs = await getJenkinsJobs("Production");
+    // console.log("jobData", jobs);
+    for (let y = 4; y <= 8; y++) {
+      for (let x = 0; x <= 8; x++) {
+        if (i < jobs.length) {
+          const job = jobs[i];
+          switch (job.color) {
+            case "blue":
+              lp.setButtonColour(x, y, 45);
+              break;
+            case "notbuilt":
+              lp.setButtonColour(x, y, 9);
+              break;
+            case "red":
+              lp.setPulsingColour(x, y, 72);
+              break;
+            case "blue_anime":
+            case "notbuilt_anime":
+            case "red_anime":
+              lp.setPulsingColour(x, y, 21);
+              break;
+            default:
+              console.log("unknown sensor", job.color);
+              lp.setPulsingColour(x, y, 13);
+              break;
+          }
+        } else {
+          lp.setButtonColour(x, y, 0);
+        }
+        i++;
+      }
+    }
+
+    lp.setButtonColour(8, 8, 0);
+
   }
   await queryAndSetDisplay();
   schedule.scheduleJob(config.cron, queryAndSetDisplay);
 
 })();
-
-
-// schedule.scheduleJob(config.cron, )
-
-
-
-
-// import midi from "midi";
-
-// import {customMode3, customMode4} from "./data/buttons";
-
-
-// class LaunchpadX {
-//   constructor() {
-//     this.output = new midi.Output();
-//     this.current = {};
-//     this.intervals = {};
-//   }
-//   initialise = (port) => {
-//     this.output.openPort(port);
-//   }
-//   setButtonColour = (row, col, colourIndex) => {
-//     const buttonCode = customMode4[row][col];
-//     this.output.sendMessage([144, buttonCode, colourIndex]);
-//     if (!this.current[row]) {
-//       this.current[row] = {};
-//     }
-//     this.current[row][col] = buttonCode;
-//   }
-
-// }
-
-
-
-
-// const colours = [13, 21, 29, 37, 45, 45, 53, 61];
-
-
-// const lp = new LaunchpadX();
-// lp.initialise(2);
-// let cc = 0;
-// for (let x = 0; x <= 8; x++) {
-//   for (let y = 0; y <= 8; y++) {
-//     cc = cc + 1;
-//     if (cc >= colours.length) {
-//       cc = 0;
-//     }
-//     changeColours(x, y, cc);
-//   }
-// }
-
-
-// async function changeColours(x, y, c) {
-//   if (c >= colours.length) {
-//     c = 0;
-//   }
-//   lp.setButtonColour(x, y, colours[c]);
-//   setTimeout(() => changeColours(x, y, c + 1), 50);
-// }
-
-
-
-// function sleep(ms = 100) {
-//   return new Promise((resolve, reject) => {
-//     return setTimeout(resolve, ms);
-//   });
-// }
-
-
-
-
-

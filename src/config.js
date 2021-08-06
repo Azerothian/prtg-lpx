@@ -8,4 +8,5 @@ export default {
   },
   midiDevice: parseInt(process.env.MIDI_DEVICE_ID),
   cron: process.env.CRON,
+  jenkinsUrl: process.env.JENKINS,
 };
