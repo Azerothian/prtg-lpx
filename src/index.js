@@ -10,11 +10,15 @@ import getJenkinsJobs from "./logic/get-jenkins-jobs";
 
 (async() => {
 
-  const lp = new LaunchpadX();
-  lp.printPorts();
-  lp.initialise(config.midiDevice);
-  lp.reset();
-  lp.setMode("programmer");
+  const lp = new LaunchpadX(config.midiDevice);
+  lp.output.on("port-open", () => {
+    console.log("port-open-output");
+    lp.reset();
+    lp.setMode("programmer");
+  });
+  lp.printInputPorts();
+  lp.printOutputPorts();
+  lp.start();
   const lshow = new LightShow(lp);
   // lp.setRGBColour(0, 0, 0, 60, 80);
   // lp.setFlashingColour(1, 1, 13, 72);
@@ -63,37 +67,45 @@ import getJenkinsJobs from "./logic/get-jenkins-jobs";
     }
 
     i = 0;
+    if (config.jenkinsUrl !== "") {
     // get jenkins production jobs
-    const jobs = await getJenkinsJobs("Production");
-    // console.log("jobData", jobs);
-    for (let y = 4; y <= 8; y++) {
-      for (let x = 0; x <= 8; x++) {
-        if (i < jobs.length) {
-          const job = jobs[i];
-          switch (job.color) {
-            case "blue":
-              lp.setButtonColour(x, y, 45);
-              break;
-            case "notbuilt":
-              lp.setButtonColour(x, y, 9);
-              break;
-            case "red":
-              lp.setPulsingColour(x, y, 72);
-              break;
-            case "blue_anime":
-            case "notbuilt_anime":
-            case "red_anime":
-              lp.setPulsingColour(x, y, 21);
-              break;
-            default:
-              console.log("unknown sensor", job.color);
-              lp.setPulsingColour(x, y, 13);
-              break;
+      const jobs = await getJenkinsJobs("Production");
+      // console.log("jobData", jobs);
+      for (let y = 4; y <= 8; y++) {
+        for (let x = 0; x <= 8; x++) {
+          if (i < jobs.length) {
+            const job = jobs[i];
+            switch (job.color) {
+              case "blue":
+                lp.setButtonColour(x, y, 45);
+                break;
+              case "notbuilt":
+                lp.setButtonColour(x, y, 9);
+                break;
+              case "red":
+                lp.setPulsingColour(x, y, 72);
+                break;
+              case "blue_anime":
+              case "notbuilt_anime":
+              case "red_anime":
+                lp.setPulsingColour(x, y, 21);
+                break;
+              default:
+                console.log("unknown sensor", job.color);
+                lp.setPulsingColour(x, y, 13);
+                break;
+            }
+          } else {
+            lp.setButtonColour(x, y, 0);
           }
-        } else {
+          i++;
+        }
+      }
+    } else {
+      for (let y = 4; y <= 8; y++) {
+        for (let x = 0; x <= 7; x++) {
           lp.setButtonColour(x, y, 0);
         }
-        i++;
       }
     }
 

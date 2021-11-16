@@ -6,7 +6,7 @@ export default {
     username: process.env.PRTG_USERNAME,
     password: process.env.PRTG_PASSWORD,
   },
-  midiDevice: parseInt(process.env.MIDI_DEVICE_ID),
+  midiDevice: process.env.MIDI_DEVICE,
   cron: process.env.CRON,
   jenkinsUrl: process.env.JENKINS,
 };

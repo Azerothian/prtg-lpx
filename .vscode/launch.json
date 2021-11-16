@@ -13,6 +13,15 @@
       ],
       "program": "${workspaceFolder}/build/index.js",
       "sourceMaps": true
+    },{
+      "type": "pwa-node",
+      "request": "launch",
+      "name": "Launch Program - Screens",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "program": "${workspaceFolder}/build/screens/index.js",
+      "sourceMaps": true
     }
   ]
 }
