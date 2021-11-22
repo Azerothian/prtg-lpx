@@ -40,7 +40,7 @@ import getJenkinsJobs from "./logic/get-jenkins-jobs";
       lshow.stop();
     }
     let i = 0;
-    for (let y = 0; y <= 3; y++) {
+    for (let y = 0; y <= 8; y++) {
       for (let x = 0; x <= 8; x++) {
         if (i < sensors.length) {
           const sensor = sensors[i];

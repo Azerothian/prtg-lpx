@@ -9,15 +9,17 @@ export default class Thread {
     if (!this.running) {
       return;
     }
+    this.prev = new Date().getTime();
     this.timeout = setTimeout(async() => {
       if (!this.paused) {
-        await this.exec();
+        await this.exec(new Date().getTime() - this.prev);
+        this.prev = new Date().getTime();
       }
       return this.beginExec();
     }, this.interval);
   }
   exec = () => {}
-  start = () => {
+  start() {
     this.running = true;
     return this.beginExec();
   }
